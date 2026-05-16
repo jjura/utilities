@@ -1,0 +1,33 @@
+#!/bin/bash
+
+DIRECTORY="$1"
+
+if [ -z "$DIRECTORY" ]
+then
+    echo "Usage: $(basename "$0") <directory>"
+    exit
+fi
+
+if [ ! -d "$DIRECTORY" ]
+then
+    echo "Error: Cannot execute the container."
+    exit
+fi
+
+local-container-root execute "$DIRECTORY" su - "$USER" <<- 'EOF'
+	export DISPLAY=":0"
+	export XDG_RUNTIME_DIR="/run/user/1000"
+	export PULSE_SERVER="unix:$XDG_RUNTIME_DIR/pulse/native"
+
+	steam
+
+	sleep 2s
+
+	umount "$XDG_RUNTIME_DIR/doc"
+
+	sleep 2s
+
+	pkill dbus-*
+
+	sleep 2
+EOF

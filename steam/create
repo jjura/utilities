@@ -1,0 +1,30 @@
+#!/bin/bash
+
+DIRECTORY="$1"
+
+if [ -z "$DIRECTORY" ]
+then
+    echo "Usage: $(basename "$0") <directory>"
+    exit
+fi
+
+if ! local-container-root create "$DIRECTORY"
+then
+    echo "Error: Cannot create the container."
+    exit
+fi
+
+local-container-root execute "$DIRECTORY" <<- EOF
+	dpkg --add-architecture i386
+
+	sed --in-place "s:$: contrib non-free non-free-firmware:" \
+		"/etc/apt/sources.list"
+
+	apt-get update
+	apt-get install --yes dbus-x11 lsb-release pciutils steam-installer
+
+	chmod u+s /usr/bin/bwrap
+
+	useradd --create-home --shell "/bin/bash" "$SUDO_USER"
+	usermod --append --groups audio,video "$SUDO_USER"
+EOF
